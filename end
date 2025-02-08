@@ -1,0 +1,182 @@
+import random
+import speech_recognition as sr
+import pyttsx3
+import webbrowser
+import tkinter as tk
+from tkinter import messagebox, ttk
+import urllib.parse
+import requests
+
+# Lista de comandos disponíveis
+commands = [
+    "Say 'how are you'",
+    "Say 'open Google' to open Google",
+    "Say 'tell me a joke'",
+    "Say 'tell me a poem'",
+    "Say 'search <query>'",
+    "Say 'play music <song name>'",
+    "Say 'spin a dice'",
+    "Say 'exit' to close"
+]
+
+# Lista de piadas dentro do próprio código
+jokes_list = [
+    "Why don't skeletons fight each other? Because they don't have the guts!",
+    "What do you call fake spaghetti? An impasta!",
+    "Why did the scarecrow win an award? Because he was outstanding in his field!",
+    "Why don’t oysters donate to charity? Because they are shellfish!",
+    "What did the ocean say to the beach? Nothing, it just waved!",
+    "Why can’t you trust an atom? Because they make up everything!",
+    "Why did the bicycle fall over? Because it was two-tired!",
+    "What do you get if you cross a snowman and a vampire? Frostbite!",
+    "Why don't eggs tell jokes? Because they'd crack each other up!",
+    "How does a penguin build its house? Igloos it together!",
+    "Why was the math book sad? Because it had too many problems!",
+    "What do you call a bear with no teeth? A gummy bear!",
+    "What do you call cheese that isn't yours? Nacho cheese!",
+    "What did the grape do when it got stepped on? Nothing but let out a little wine!",
+    "Why was the computer cold? Because it left its Windows open!",
+    "How do you organize a space party? You planet!",
+    "Why don’t some couples go to the gym? Because some relationships don’t work out!",
+    "Why did the tomato turn red? Because it saw the salad dressing!",
+    "What do you call a sleeping bull? A bulldozer!",
+    "Why did the golfer bring two pairs of pants? In case he got a hole in one!",
+    "Why did the chicken join a band? Because it had the drumsticks!",
+    "What do you call a fish with no eyes? A fsh!",
+    "What do you get when you cross a snowman and a dog? Frostbite!",
+    "Why can’t you give Elsa a balloon? Because she’ll let it go!",
+    "Why was the broom late? It swept in!",
+    "What did the left eye say to the right eye? Between you and me, something smells!",
+    "What did one wall say to the other wall? I'll meet you at the corner!",
+    "What did one plate say to the other plate? Lunch is on me!",
+    "Why did the coffee file a police report? It got mugged!",
+    "Why don’t skeletons fight each other? They don’t have the stomach for it!",
+    "Why don’t vampires use Facebook? Because they can't handle the 'like' button!",
+    "What’s orange and sounds like a parrot? A carrot!",
+    "Why don’t ants get sick? Because they have tiny ant-bodies!",
+    "What’s a skeleton’s least favorite room? The living room!",
+    "What did the ocean say to the beach? Nothing, it just waved!",
+    "What do you call an alligator in a vest? An investigator!",
+    "Why don’t programmers like nature? It has too many bugs!",
+    "How do you make holy water? You boil the hell out of it!",
+    "Why did the banana go to the doctor? Because it wasn’t peeling well!"
+]
+
+# Inicializa o motor de texto-para-fala
+engine = pyttsx3.init()
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def listen():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        status_label.config(text="Listening...")
+        audio = r.listen(source)
+        try:
+            command = r.recognize_google(audio, language="en-US")
+            return command.lower()
+        except:
+            return None
+
+def get_poem():
+    try:
+        response = requests.get("https://poetrydb.org/random")
+        if response.status_code == 200:
+            poem_data = response.json()[0]
+            title = poem_data.get("title", "Untitled")
+            author = poem_data.get("author", "Unknown")
+            lines = "\n".join(poem_data.get("lines", []))
+            return f"{title} by {author}:\n{lines}"
+    except:
+        return "Sorry, I couldn't fetch a poem."
+
+def play_music(query):
+    webbrowser.open(f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}")
+    speak(f"Playing {query} on YouTube.")
+
+# Atualizado para gerar um número aleatório entre 1 e 32
+def roll_dice():
+    result = random.randint(1, 32)
+    return f"The dice rolled: {result}"
+
+def update_textbox(text):
+    # Adiciona o texto na caixa de texto com um salto de linha.
+    textbox.insert(tk.END, f"{text}\n")
+    textbox.yview(tk.END)  # Desloca para a parte inferior
+
+def on_mic_button_click():
+    while True:
+        command = listen()
+        if command:
+            if "exit" in command:
+                speak("Goodbye!")
+                update_textbox("Goodbye!")
+                root.quit()
+                break
+            elif "how are you" in command:
+                response = "I'm doing well!"
+                speak(response)
+                update_textbox(response)
+            elif "open google" in command:
+                response = "Opening Google now."
+                speak(response)
+                update_textbox(response)
+                webbrowser.open("https://www.google.com")
+            elif "tell me a joke" in command:
+                joke = random.choice(jokes_list)
+                speak(joke)
+                update_textbox(joke)
+            elif "tell me a poem" in command:
+                poem = get_poem()
+                speak(poem)
+                update_textbox(poem)
+            elif "search" in command:
+                search_query = command.replace("search", "").strip()
+                webbrowser.open(f"https://www.google.com/search?q={search_query}")
+                response = f"Searching for {search_query} on Google."
+                speak(response)
+                update_textbox(response)
+            elif "play music" in command:
+                music_query = command.replace("play music", "").strip()
+                play_music(music_query)
+            elif "spin a dice" in command:
+                dice_result = roll_dice()
+                speak(dice_result)
+                update_textbox(dice_result)
+            else:
+                response = "Sorry, I can't help with that."
+                speak(response)
+                update_textbox(response)
+
+root = tk.Tk()
+root.title("Voice Command AI")
+root.geometry("600x400")
+root.configure(bg="#282c34")
+
+frame_left = tk.Frame(root, width=200, bg="#3c4048")
+frame_left.pack(side="left", fill="y")
+
+frame_right = tk.Frame(root, bg="#282c34")
+frame_right.pack(side="right", expand=True, fill="both")
+
+lbl_commands = tk.Label(frame_left, text="Commands", font=("Arial", 14, "bold"), fg="white", bg="#3c4048")
+lbl_commands.pack(pady=10)
+
+for cmd in commands:
+    lbl = tk.Label(frame_left, text=cmd, font=("Arial", 12), fg="white", bg="#3c4048")
+    lbl.pack(anchor="w", padx=10, pady=2)
+
+status_label = tk.Label(frame_right, text="Click the button to start listening...", font=("Arial", 14), fg="white", bg="#282c34")
+status_label.pack(pady=20)
+
+# Caixa de texto para mostrar as legendas
+textbox = tk.Text(frame_right, height=10, width=40, font=("Arial", 12), wrap=tk.WORD, bg="#2e323b", fg="white")
+textbox.pack(pady=20)
+textbox.config(state=tk.DISABLED)  # Desabilita a edição manual da caixa de texto
+
+mic_button = tk.Button(frame_right, text="🎤 Start Listening", font=("Arial", 16), command=on_mic_button_click, bg="#61afef", fg="black", padx=10, pady=5)
+mic_button.pack(pady=20)
+
+root.mainloop()
